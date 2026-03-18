@@ -372,7 +372,7 @@
     display: flex; gap: 24px; align-items: flex-start;
     justify-content: center;
   }
-  .deal-layout .spread { flex: 0 0 auto; }
+  .deal-layout .spread { flex: 1 1 0%; min-width: 0; width: 100%; }
 
   /* Reading panel (sidebar on desktop) */
   .reading-panel {
@@ -918,14 +918,15 @@ const SPREADS = {
       { name: "Spirit", desc: "The unifying force — your higher self, life purpose, spiritual core." }
     ],
     layout: {
-      type: "pentagram",
-      // Positions arranged as a five-pointed star: Spirit top, Fire upper-left, Water upper-right, Earth lower-left, Air lower-right
-      positions: [
-        { top: "72%", left: "8%" },    // Earth (lower-left)
-        { top: "72%", left: "60%" },   // Air (lower-right)
-        { top: "18%", left: "0%" },    // Fire (upper-left)
-        { top: "18%", left: "68%" },   // Water (upper-right)
-        { top: "0%", left: "34%" }     // Spirit (top center)
+      type: "pentagram_grid",
+      // 5-col x 3-row CSS Grid for star shape
+      // Row 1: Spirit (center). Row 2: Fire (left), Water (right). Row 3: Earth (inner-left), Air (inner-right)
+      gridPositions: [
+        { gridColumn: "2", gridRow: "3" },  // Earth
+        { gridColumn: "4", gridRow: "3" },  // Air
+        { gridColumn: "1", gridRow: "2" },  // Fire
+        { gridColumn: "5", gridRow: "2" },  // Water
+        { gridColumn: "3", gridRow: "1" }   // Spirit
       ]
     }
   },
@@ -947,17 +948,10 @@ const SPREADS = {
       { name: "Outcome", desc: "The most likely result given the current trajectory and influences." }
     ],
     layout: {
-      type: "arc",
-      // 7 cards arranged in a horseshoe/arc
-      positions: [
-        { top: "65%", left: "0%" },
-        { top: "30%", left: "5%" },
-        { top: "5%", left: "18%" },
-        { top: "0%", left: "38%" },
-        { top: "5%", left: "58%" },
-        { top: "30%", left: "70%" },
-        { top: "65%", left: "76%" }
-      ]
+      type: "horseshoe_grid",
+      // 7-column CSS grid with margin-top offsets to create arc curve
+      // Cards 1,7 at bottom; card 4 at top; smooth curve between
+      marginTops: [200, 100, 25, 0, 25, 100, 200]
     }
   },
 
@@ -2229,78 +2223,76 @@ function renderSpreadLayout() {
     }
     container.appendChild(row);
 
-  } else if (layout.type === 'arc') {
-    // Horseshoe arc layout
-    const arc = document.createElement('div');
-    arc.className = 'spread-arc';
-    arc.style.position = 'relative';
-    arc.style.width = '100%';
-    arc.style.maxWidth = '750px';
-    arc.style.margin = '0 auto';
-    arc.style.aspectRatio = '750 / 480';
+  } else if (layout.type === 'horseshoe_grid') {
+    // Horseshoe — 7-column CSS grid with margin-top offsets for arc curve
+    const grid = document.createElement('div');
+    grid.className = 'spread-horseshoe';
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+    grid.style.gap = '4px';
+    grid.style.justifyItems = 'center';
+    grid.style.maxWidth = '1100px';
+    grid.style.margin = '0 auto';
 
     for (let i = 0; i < selectedSpread.cardCount; i++) {
       const slot = document.createElement('div');
       slot.id = `slot-${i}`;
-      slot.style.position = 'absolute';
-      slot.style.top = layout.positions[i].top;
-      slot.style.left = layout.positions[i].left;
-      arc.appendChild(slot);
+      slot.style.setProperty('--arc-mt', layout.marginTops[i] + 'px');
+      slot.style.marginTop = 'var(--arc-mt)';
+      grid.appendChild(slot);
     }
-    container.appendChild(arc);
+    container.appendChild(grid);
 
-    // On narrow screens, switch to flow layout
     const style = document.createElement('style');
     style.id = 'spread-dynamic-style';
     style.textContent = `
-      @media (max-width: 580px) {
-        .spread-arc {
-          position: static !important; display: flex !important; flex-wrap: wrap !important;
-          justify-content: center !important; gap: 15px !important; aspect-ratio: auto !important;
-        }
-        .spread-arc > div { position: static !important; }
-        .spread-arc .card-slot { width: 80px; height: 124px; }
+      @media (max-width: 1024px) {
+        .spread-horseshoe .card-slot { width: 120px; height: 186px; }
       }
-      @media (max-width: 768px) and (min-width: 581px) {
-        .spread-arc .card-slot { width: 100px; height: 155px; }
+      @media (max-width: 768px) {
+        .spread-horseshoe .card-slot { width: 90px; height: 140px; }
+        .spread-horseshoe .position-label { font-size: 0.55em; }
+        .spread-horseshoe > div { margin-top: calc(var(--arc-mt) * 0.6) !important; }
+      }
+      @media (max-width: 480px) {
+        .spread-horseshoe .card-slot { width: 65px; height: 101px; }
+        .spread-horseshoe .position-label { font-size: 0.45em; }
+        .spread-horseshoe .card-name-label { font-size: 0.4em; }
+        .spread-horseshoe > div { margin-top: calc(var(--arc-mt) * 0.35) !important; }
       }
     `;
     document.head.appendChild(style);
 
-  } else if (layout.type === 'pentagram') {
-    // Star/pentagram layout
-    const star = document.createElement('div');
-    star.className = 'spread-pentagram';
-    star.style.position = 'relative';
-    star.style.width = '100%';
-    star.style.maxWidth = '600px';
-    star.style.margin = '0 auto';
-    star.style.aspectRatio = '600 / 550';
+  } else if (layout.type === 'pentagram_grid') {
+    // Pentagram star — 5-column 3-row CSS Grid, fully responsive
+    const grid = document.createElement('div');
+    grid.className = 'spread-pentagram';
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    grid.style.gridTemplateRows = 'auto auto auto';
+    grid.style.justifyItems = 'center';
+    grid.style.maxWidth = '900px';
+    grid.style.margin = '0 auto';
 
     for (let i = 0; i < selectedSpread.cardCount; i++) {
       const slot = document.createElement('div');
       slot.id = `slot-${i}`;
-      slot.style.position = 'absolute';
-      slot.style.top = layout.positions[i].top;
-      slot.style.left = layout.positions[i].left;
-      star.appendChild(slot);
+      const pos = layout.gridPositions[i];
+      slot.style.gridColumn = pos.gridColumn;
+      slot.style.gridRow = pos.gridRow;
+      grid.appendChild(slot);
     }
-    container.appendChild(star);
+    container.appendChild(grid);
 
-    // On narrow screens, switch to flow layout
     const style = document.createElement('style');
     style.id = 'spread-dynamic-style';
     style.textContent = `
-      @media (max-width: 580px) {
-        .spread-pentagram {
-          position: static !important; display: flex !important; flex-wrap: wrap !important;
-          justify-content: center !important; gap: 15px !important; aspect-ratio: auto !important;
-        }
-        .spread-pentagram > div { position: static !important; }
-        .spread-pentagram .card-slot { width: 80px; height: 124px; }
-      }
-      @media (max-width: 768px) and (min-width: 581px) {
+      @media (max-width: 768px) {
         .spread-pentagram .card-slot { width: 100px; height: 155px; }
+      }
+      @media (max-width: 480px) {
+        .spread-pentagram .card-slot { width: 72px; height: 112px; }
+        .spread-pentagram .position-label { font-size: 0.5em; }
       }
     `;
     document.head.appendChild(style);
