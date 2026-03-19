@@ -252,7 +252,7 @@
   /* Deal step */
 
   .card-slot {
-    width: 170px; height: 264px; perspective: 800px;
+    width: 170px; perspective: 800px;
     margin: 0 auto; cursor: pointer; position: relative;
   }
   .card-labels { text-align: center; margin-top: 6px; }
@@ -268,7 +268,7 @@
   .card-slot.flipped .card-name-label { display: block; }
 
   .card-inner {
-    width: 100%; height: 100%; position: relative;
+    width: 100%; height: 264px; position: relative;
     transform-style: preserve-3d; transition: transform 0.8s ease;
   }
   .card-inner.flipped { transform: rotateY(180deg); }
@@ -779,6 +779,9 @@
       <div class="cut-instruction" id="cutInstruction">Click two cards to divide the deck into three piles</div>
       <div class="card-fan" id="cardFan"></div>
       <div class="piles-container" id="pilesContainer" style="display:none;"></div>
+      <div class="btn-row" style="display:flex;justify-content:center;margin-top:15px;">
+        <button class="btn-secondary" onclick="goToDeal()">Done Cutting</button>
+      </div>
     </div>
   </div>
 
@@ -808,7 +811,7 @@
   <div class="footer" style="text-align:center;margin:40px 0 20px;font-size:0.8em;">
     <a href="#" onclick="resetApiKey();return false" style="color:#8a7d65;text-decoration:underline;">Reset API Key</a>
     <span style="margin:0 10px;color:#333;">|</span>
-    <a href="#" onclick="startOver();return false" style="color:#8a7d65;text-decoration:underline;">New Reading</a>
+    <button class="btn-secondary" onclick="startOver()" style="margin-left:10px;">New Reading</button>
   </div>
 
   <div class="modal-overlay" id="modal" onclick="closeModal(event)">
@@ -894,7 +897,7 @@ const SPREADS = {
     layout: {
       type: "grid",
       gridTemplateColumns: "1fr 1fr 1fr",
-      gridTemplateRows: "1fr 1fr 1fr",
+      gridTemplateRows: "auto auto auto",
       positions: [
         { gridColumn: "1", gridRow: "2" },  // Past (left middle)
         { gridColumn: "2", gridRow: "2" },  // Present (center)
@@ -2153,15 +2156,15 @@ function renderSpreadLayout() {
       .rotated-slot:has(.flipped) .position-overlay { display: none; }
       @media (max-width: 1024px) {
         .celtic-cross-layout { grid-template-columns: 150px 150px 150px 30px 150px; grid-template-rows: 260px 260px 260px 260px; gap: 8px; }
-        .celtic-cross-layout .card-slot, .celtic-cross-layout .sig-in-grid { width: 130px; height: 202px; }
+        .celtic-cross-layout .card-slot { width: 130px; } .celtic-cross-layout .card-inner { height: 202px; } .celtic-cross-layout .sig-in-grid { width: 130px; height: 202px; }
       }
       @media (max-width: 768px) {
         .celtic-cross-layout { grid-template-columns: 110px 110px 110px 20px 110px; grid-template-rows: 210px 210px 210px 210px; gap: 6px; }
-        .celtic-cross-layout .card-slot, .celtic-cross-layout .sig-in-grid { width: 100px; height: 155px; }
+        .celtic-cross-layout .card-slot { width: 100px; } .celtic-cross-layout .card-inner { height: 155px; } .celtic-cross-layout .sig-in-grid { width: 100px; height: 155px; }
       }
       @media (max-width: 580px) {
         .celtic-cross-layout { grid-template-columns: 80px 80px 80px 15px 80px; grid-template-rows: 170px 170px 170px 170px; gap: 4px; }
-        .celtic-cross-layout .card-slot, .celtic-cross-layout .sig-in-grid { width: 72px; height: 112px; }
+        .celtic-cross-layout .card-slot { width: 72px; } .celtic-cross-layout .card-inner { height: 112px; } .celtic-cross-layout .sig-in-grid { width: 72px; height: 112px; }
       }
     `;
     document.head.appendChild(style);
@@ -2175,7 +2178,7 @@ function renderSpreadLayout() {
     grid.style.gridTemplateRows = layout.gridTemplateRows;
     grid.style.gap = '12px';
     grid.style.justifyItems = 'center';
-    grid.style.alignItems = 'center';
+    grid.style.alignItems = 'end';
     grid.style.maxWidth = '700px';
     grid.style.margin = '0 auto';
 
@@ -2193,14 +2196,14 @@ function renderSpreadLayout() {
     const style = document.createElement('style');
     style.id = 'spread-dynamic-style';
     style.textContent = `
-      .generic-grid-layout { grid-template-columns: 200px 200px 200px; grid-template-rows: 310px 310px 310px; }
+      .generic-grid-layout { grid-template-columns: 200px 200px 200px; grid-template-rows: repeat(3, auto); }
       @media (max-width: 768px) {
-        .generic-grid-layout { grid-template-columns: 130px 130px 130px; grid-template-rows: 230px 230px 230px; gap: 8px; }
-        .generic-grid-layout .card-slot { width: 120px; height: 186px; }
+        .generic-grid-layout { grid-template-columns: 130px 130px 130px; gap: 8px; }
+        .generic-grid-layout .card-slot { width: 120px; } .generic-grid-layout .card-inner { height: 186px; }
       }
       @media (max-width: 580px) {
-        .generic-grid-layout { grid-template-columns: 90px 90px 90px; grid-template-rows: 170px 170px 170px; gap: 6px; }
-        .generic-grid-layout .card-slot { width: 80px; height: 124px; }
+        .generic-grid-layout { grid-template-columns: 90px 90px 90px; gap: 6px; }
+        .generic-grid-layout .card-slot { width: 80px; } .generic-grid-layout .card-inner { height: 124px; }
       }
     `;
     document.head.appendChild(style);
@@ -2246,16 +2249,19 @@ function renderSpreadLayout() {
     const style = document.createElement('style');
     style.id = 'spread-dynamic-style';
     style.textContent = `
+      .spread-horseshoe .card-slot { width: 140px; max-width: 100%; }
+      .spread-horseshoe .card-inner { height: 217px; }
+      .spread-horseshoe .position-label { font-size: 0.7em; }
       @media (max-width: 1024px) {
-        .spread-horseshoe .card-slot { width: 120px; height: 186px; }
+        .spread-horseshoe .card-slot { max-width: 120px; } .spread-horseshoe .card-inner { height: 186px; }
       }
       @media (max-width: 768px) {
-        .spread-horseshoe .card-slot { width: 90px; height: 140px; }
+        .spread-horseshoe .card-slot { max-width: 90px; } .spread-horseshoe .card-inner { height: 140px; }
         .spread-horseshoe .position-label { font-size: 0.55em; }
         .spread-horseshoe > div { margin-top: calc(var(--arc-mt) * 0.6) !important; }
       }
       @media (max-width: 480px) {
-        .spread-horseshoe .card-slot { width: 65px; height: 101px; }
+        .spread-horseshoe .card-slot { max-width: 65px; } .spread-horseshoe .card-inner { height: 101px; }
         .spread-horseshoe .position-label { font-size: 0.45em; }
         .spread-horseshoe .card-name-label { font-size: 0.4em; }
         .spread-horseshoe > div { margin-top: calc(var(--arc-mt) * 0.35) !important; }
@@ -2288,10 +2294,10 @@ function renderSpreadLayout() {
     style.id = 'spread-dynamic-style';
     style.textContent = `
       @media (max-width: 768px) {
-        .spread-pentagram .card-slot { width: 100px; height: 155px; }
+        .spread-pentagram .card-slot { width: 100px; } .spread-pentagram .card-inner { height: 155px; }
       }
       @media (max-width: 480px) {
-        .spread-pentagram .card-slot { width: 72px; height: 112px; }
+        .spread-pentagram .card-slot { width: 72px; } .spread-pentagram .card-inner { height: 112px; }
         .spread-pentagram .position-label { font-size: 0.5em; }
       }
     `;
@@ -2840,9 +2846,12 @@ Weave all ${selectedSpread.cardCount} cards together into a cohesive narrative. 
   isStreaming = false;
   document.getElementById('readingPanel').classList.remove('streaming');
 
-  // Hide sticky bar
-  document.getElementById('stickyBar').classList.remove('visible');
-  document.body.classList.remove('has-sticky-bar');
+  // Replace sticky bar with New Reading button
+  document.getElementById('stickyPosInfo').textContent = 'Reading complete';
+  document.getElementById('stickyPosDesc').textContent = '';
+  btn.textContent = 'New Reading';
+  btn.disabled = false;
+  btn.onclick = startOver;
 }
 
 function formatMarkdown(text) {
